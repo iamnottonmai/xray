@@ -14,6 +14,7 @@ import importlib.util
 # ============================
 MODEL_URL = "https://drive.google.com/uc?id=1zTS45HMzZvaEEcFycW61LE6gnSbC692J"
 MODEL_PATH = "srcnn_epoch50.pth"
+SRCNN_PATH = "SRCNN.py"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # ============================
@@ -24,12 +25,16 @@ if not os.path.exists(MODEL_PATH):
         gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
 
 # ============================
-# LOAD SRCNN CLASS FROM srcnn.py
+# LOAD SRCNN CLASS FROM SRCNN.py
 # ============================
-spec = importlib.util.spec_from_file_location("srcnn", "srcnn.py")
-srcnn_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(srcnn_module)
-SRCNN = srcnn_module.SRCNN
+if os.path.exists(SRCNN_PATH):
+    spec = importlib.util.spec_from_file_location("SRCNN", SRCNN_PATH)
+    srcnn_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(srcnn_module)
+    SRCNN = srcnn_module.SRCNN
+else:
+    st.error(f"Could not find {SRCNN_PATH}. Make sure it exists in the same directory as app.py.")
+    st.stop()
 
 # ============================
 # LOAD MODEL
