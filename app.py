@@ -47,7 +47,7 @@ model.eval()
 # STREAMLIT UI
 # ============================
 st.set_page_config(page_title="🧠 SRCNN Image Super-Resolution")
-st.title("🔍 SRCNN Super-Resolution Demo")
+st.title("SRCNN Super-Resolution Demo")
 st.write("Upload a **grayscale** image and see the enhanced version.")
 
 uploaded_file = st.file_uploader("Upload a low-res image", type=["png", "jpg", "jpeg"])
