@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import gdown
 import os
+import importlib.util
 
 # ============================
 # CONFIG
@@ -23,20 +24,20 @@ if not os.path.exists(MODEL_PATH):
         gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
 
 # ============================
-# SRCNN Model
+# LOAD SRCNN CLASS FROM srcnn.py
 # ============================
-from srcnn import SRCNN  # <--- changed line
-import importlib.util
-
 spec = importlib.util.spec_from_file_location("srcnn", "srcnn.py")
 srcnn_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(srcnn_module)
 SRCNN = srcnn_module.SRCNN
 
+# ============================
+# LOAD MODEL
+# ============================
 model = SRCNN().to(DEVICE)
 model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
 model.eval()
-# ============================
+
 # ============================
 # STREAMLIT UI
 # ============================
@@ -66,4 +67,3 @@ if uploaded_file:
         st.image(image, caption="Low-Res Input", use_column_width=True)
     with col2:
         st.image(output, caption="SRCNN Output", use_column_width=True, clamp=True)
-
