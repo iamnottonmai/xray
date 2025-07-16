@@ -26,15 +26,17 @@ if not os.path.exists(MODEL_PATH):
 # SRCNN Model
 # ============================
 from srcnn import SRCNN  # <--- changed line
+import importlib.util
+
+spec = importlib.util.spec_from_file_location("srcnn", "srcnn.py")
+srcnn_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(srcnn_module)
+SRCNN = srcnn_module.SRCNN
+
 model = SRCNN().to(DEVICE)
 model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
 model.eval()
 # ============================
-from srcnn import SRCNN
-model = SRCNN().to(DEVICE)
-model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
-model.eval()
-
 # ============================
 # STREAMLIT UI
 # ============================
