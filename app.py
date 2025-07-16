@@ -25,7 +25,12 @@ if not os.path.exists(MODEL_PATH):
 # ============================
 # SRCNN Model
 # ============================
-from models.SRCNN import SRCNN
+from srcnn import SRCNN  # <--- changed line
+model = SRCNN().to(DEVICE)
+model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
+model.eval()
+# ============================
+from srcnn import SRCNN
 model = SRCNN().to(DEVICE)
 model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
 model.eval()
