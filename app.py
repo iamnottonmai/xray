@@ -1,9 +1,7 @@
 import streamlit as st
 import torch
-import torch.nn as nn
 from torchvision import transforms
 from PIL import Image
-import matplotlib.pyplot as plt
 import numpy as np
 import gdown
 import os
@@ -14,7 +12,7 @@ import importlib.util
 # ============================
 MODEL_URL = "https://drive.google.com/uc?id=1zTS45HMzZvaEEcFycW61LE6gnSbC692J"
 MODEL_PATH = "srcnn_epoch50.pth"
-SRCNN_PATH = "SRCNN.py"
+SRCNN_PATH = "SRCNN.py"  # Make sure this matches your file name exactly
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # ============================
@@ -46,8 +44,8 @@ model.eval()
 # ============================
 # STREAMLIT UI
 # ============================
-st.set_page_config(page_title="🧠 SRCNN Image Super-Resolution")
-st.title("SRCNN Super-Resolution Demo")
+st.set_page_config(page_title="  SRCNN Image Super-Resolution")
+st.title("  SRCNN Super-Resolution Demo")
 st.write("Upload a **grayscale** image and see the enhanced version.")
 
 uploaded_file = st.file_uploader("Upload a low-res image", type=["png", "jpg", "jpeg"])
@@ -66,9 +64,15 @@ if uploaded_file:
         output = model(input_tensor)
         output = torch.clamp(output, 0, 1).squeeze().cpu().numpy()
 
-    # Display
+    # Prepare images for display
+    input_display = image.resize((64, 64))
+    output_img = Image.fromarray((output * 255).astype(np.uint8))
+    output_img = output_img.resize((64, 64))
+
+    # Display side by side
     col1, col2 = st.columns(2)
+
     with col1:
-        st.image(image, caption="Low-Res Input", use_column_width=True)
+        st.image(input_display, caption="Low-Res Input (64×64 px)", use_container_width=False)
     with col2:
-        st.image(output, caption="SRCNN Output", use_column_width=True, clamp=True)
+        st.image(output_img, caption="SRCNN Output (64×64 px)", use_container_width=False)
