@@ -13,7 +13,7 @@ import importlib.util
 # CONFIG
 # ============================
 MODEL_URL = "https://drive.google.com/uc?id=1zTS45HMzZvaEEcFycW61LE6gnSbC692J"
-MODEL_PATH = "srcnn_model.pth"
+MODEL_PATH = "srcnn_epoch50.pth"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # ============================
