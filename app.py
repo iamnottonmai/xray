@@ -1,80 +1,84 @@
 import streamlit as st
 import torch
-import torchvision.transforms as T
+import torch.nn as nn
+from torchvision import transforms
 from PIL import Image
+import numpy as np
 import gdown
 import os
-import importlib.util
 
 # ============================
-# CONFIG
+# CONFIGURATION
 # ============================
-MODEL_URL = "https://drive.google.com/uc?id=1zTS45HMzZvaEEcFycW61LE6gnSbC692J"
+MODEL_URL = "https://drive.google.com/uc?id=1xYLFfrS7VaQr6MEgwN0vA-bSJGL1qf3C"
 MODEL_PATH = "srcnn_epoch99.pth"
-SRCNN_PATH = "SRCNN.py"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # ============================
-# DOWNLOAD MODEL IF NEEDED
+# SRCNN Model Definition
 # ============================
-if not os.path.exists(MODEL_PATH):
-    with st.spinner("Downloading model..."):
+class SRCNN(nn.Module):
+    def __init__(self):
+        super(SRCNN, self).__init__()
+        self.layer1 = nn.Conv2d(1, 64, kernel_size=9, padding=4)
+        self.layer2 = nn.Conv2d(64, 32, kernel_size=5, padding=2)
+        self.layer3 = nn.Conv2d(32, 1, kernel_size=5, padding=2)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        x = self.relu(self.layer1(x))
+        x = self.relu(self.layer2(x))
+        x = self.layer3(x)
+        return x
+
+# ============================
+# LOAD MODEL FROM DRIVE (cached)
+# ============================
+@st.cache_resource
+def load_model():
+    if not os.path.exists(MODEL_PATH):
         gdown.download(MODEL_URL, MODEL_PATH, quiet=False)
+    model = SRCNN().to(DEVICE)
+    model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
+    model.eval()
+    return model
+
+# Load model ONCE when app runs
+model = load_model()
 
 # ============================
-# LOAD SRCNN CLASS FROM SRCNN.py
+# PREPROCESS IMAGE
 # ============================
-if os.path.exists(SRCNN_PATH):
-    spec = importlib.util.spec_from_file_location("SRCNN", SRCNN_PATH)
-    srcnn_module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(srcnn_module)
-    SRCNN = srcnn_module.SRCNN
-else:
-    st.error(f"Could not find {SRCNN_PATH}. Make sure it exists in the same directory as app.py.")
-    st.stop()
+def preprocess(image: Image.Image) -> torch.Tensor:
+    transform = transforms.Compose([
+        transforms.Resize((256, 256), interpolation=Image.BICUBIC),
+        transforms.ToTensor()
+    ])
+    return transform(image).unsqueeze(0).to(DEVICE)
 
 # ============================
-# LOAD MODEL
+# POSTPROCESS TO PIL
 # ============================
-model = SRCNN().to(DEVICE)
-model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
-model.eval()
+def postprocess(tensor: torch.Tensor) -> Image.Image:
+    tensor = torch.clamp(tensor.squeeze().cpu(), 0, 1)
+    return transforms.ToPILImage()(tensor)
 
 # ============================
-# STREAMLIT UI
+# STREAMLIT APP
 # ============================
-st.set_page_config(page_title="SRCNN Super-Resolution")
-st.title("🔍 SRCNN Image Super-Resolution")
-st.write("Upload a **grayscale** image. The model expects grayscale input.")
+st.title("X-ray Super-Resolution using SRCNN")
+st.write("Upload a **grayscale X-ray image**, and the model will enhance the resolution.")
 
-uploaded_file = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+uploaded_file = st.file_uploader("Choose an image", type=["png", "jpg", "jpeg"])
 
 if uploaded_file:
-    # Load original image in grayscale mode
-    original_img = Image.open(uploaded_file).convert("L")
-    
-    # Transform: resize to 256x256 & to tensor for model input
-    transform_infer = T.Compose([
-        T.Resize((256, 256), interpolation=Image.BICUBIC),
-        T.ToTensor(),
-    ])
-    input_tensor = transform_infer(original_img).unsqueeze(0).to(DEVICE)
+    image = Image.open(uploaded_file).convert("L")
+    st.image(image.resize((512, 512), resample=Image.BICUBIC), caption="Low-Resolution Input", use_column_width=True)
 
-    # Inference
+    input_tensor = preprocess(image)
+
     with torch.no_grad():
         output_tensor = model(input_tensor)
-        output_tensor = torch.clamp(output_tensor, 0, 1)
+        output_image = postprocess(output_tensor)
 
-    # Prepare images for display
-    original_vis = original_img.resize((1024, 1024), Image.BICUBIC)
-    output_img = T.ToPILImage()(output_tensor.squeeze().cpu())
-    output_vis = output_img.resize((1024, 1024), Image.BICUBIC)
-
-    # Display images side-by-side
-    col1, col2 = st.columns(2)
-    with col1:
-        st.image(original_vis, caption="Original Grayscale Image (Resized 1024x1024)", use_container_width=True)
-    with col2:
-        st.image(output_vis, caption="SRCNN Super-Resolved Output", use_container_width=True)
-
-    st.success("✅ Inference done successfully.")
+    st.image(output_image.resize((512, 512), resample=Image.BICUBIC), caption="Super-Resolved Output", use_column_width=True)
