@@ -1,7 +1,7 @@
 import streamlit as st
 import torch
 import torch.nn as nn
-import torchvision.transform as T
+import torchvision.transforms as T
 from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
