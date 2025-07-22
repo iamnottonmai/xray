@@ -66,18 +66,15 @@ if uploaded_file:
         output_tensor = torch.clamp(output_tensor, 0, 1)
 
     # Prepare images for display
-    # Original image resized to 1024x1024 for display
     original_vis = original_img.resize((1024, 1024), Image.BICUBIC)
-
-    # Output tensor to PIL, then resize for display
     output_img = T.ToPILImage()(output_tensor.squeeze().cpu())
     output_vis = output_img.resize((1024, 1024), Image.BICUBIC)
 
     # Display images side-by-side
     col1, col2 = st.columns(2)
     with col1:
-        st.image(original_vis, caption="Original Grayscale Image (Resized 1024x1024)", use_column_width=True)
+        st.image(original_vis, caption="Original Grayscale Image (Resized 1024x1024)", use_container_width=True)
     with col2:
-        st.image(output_vis, caption="SRCNN Super-Resolved Output", use_column_width=True)
+        st.image(output_vis, caption="SRCNN Super-Resolved Output", use_container_width=True)
 
-    st.write("Inference done successfully.")
+    st.success("✅ Inference done successfully.")
