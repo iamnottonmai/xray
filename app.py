@@ -46,29 +46,47 @@ model.eval()
 # ============================
 # STREAMLIT UI
 # ============================
-st.set_page_config(page_title="  SRCNN Image Super-Resolution")
-st.title("  SRCNN Super-Resolution Demo")
-st.write("Upload a **grayscale** image and see the enhanced version.")
+st.set_page_config(page_title="SRCNN Super-Resolution")
+st.title("🔍 SRCNN Image Super-Resolution")
+st.write("Upload a **grayscale or color** image. We'll simulate low-resolution and enhance it using SRCNN.")
 
-uploaded_file = st.file_uploader("Upload a low-res image", type=["png", "jpg", "jpeg"])
+uploaded_file = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
 if uploaded_file:
-    # Load and preprocess
-    image = Image.open(uploaded_file).convert("L")
-    transform = T.Compose([
-    T.Resize((256, 256), interpolation=Image.BICUBIC),
-    T.ToTensor(),
-    ])
-    input_tensor = transform(image).unsqueeze(0).to(DEVICE)
+    # ============================
+    # LOAD ORIGINAL IMAGE
+    # ============================
+    original = Image.open(uploaded_file).convert("L")  # Grayscale
+    original = original.resize((256, 256), Image.BICUBIC)
 
-    # Inference
+    # Simulate low-res image (downsample then upsample)
+    low_res = original.resize((64, 64), Image.BICUBIC)
+    bicubic = low_res.resize((256, 256), Image.BICUBIC)
+
+    # ============================
+    # TRANSFORM INPUT FOR MODEL
+    # ============================
+    input_tensor = T.ToTensor()(bicubic).unsqueeze(0).to(DEVICE)
+
+    # ============================
+    # INFERENCE
+    # ============================
     with torch.no_grad():
         output = model(input_tensor)
         output = torch.clamp(output, 0, 1).squeeze().cpu().numpy()
 
-    # Display
-    col1, col2 = st.columns(2)
+    # ============================
+    # DISPLAY
+    # ============================
+    col1, col2, col3 = st.columns(3)
     with col1:
-        st.image(image, caption="Low-Res Input", use_container_width=True)
+        st.image(original, caption="Original (Grayscale)", use_container_width=True)
     with col2:
+        st.image(bicubic, caption="Simulated Low-Res (Bicubic)", use_container_width=True)
+    with col3:
         st.image(output, caption="SRCNN Output", use_container_width=True, clamp=True)
+
+    # Optional: pixel difference
+    with torch.no_grad():
+        diff = torch.abs(model(input_tensor) - input_tensor).mean().item()
+    st.markdown(f"**Average Pixel Difference:** `{diff:.6f}`")
