@@ -1,7 +1,7 @@
 import streamlit as st
 import torch
 import torch.nn as nn
-from torchvision import transforms
+from torchvision import T
 from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
@@ -55,9 +55,9 @@ uploaded_file = st.file_uploader("Upload a low-res image", type=["png", "jpg", "
 if uploaded_file:
     # Load and preprocess
     image = Image.open(uploaded_file).convert("L")
-    transform = transforms.Compose([
-        transforms.Resize((64, 64)),
-        transforms.ToTensor()
+    transform = T.Compose([
+    T.Resize((256, 256), interpolation=Image.BICUBIC),
+    T.ToTensor(),
     ])
     input_tensor = transform(image).unsqueeze(0).to(DEVICE)
 
