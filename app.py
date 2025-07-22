@@ -55,8 +55,8 @@ if uploaded_file:
     
     # Transform: resize to 256x256 & to tensor for model input
     transform_infer = T.Compose([
-        T.Resize((256, 256)),
-        T.ToTensor()
+        T.Resize((256, 256), interpolation=Image.BICUBIC),
+        T.ToTensor(),
     ])
     input_tensor = transform_infer(original_img).unsqueeze(0).to(DEVICE)
 
