@@ -14,6 +14,13 @@ MODEL_URL = "https://drive.google.com/uc?id=1xYLFfrS7VaQr6MEgwN0vA-bSJGL1qf3C"
 MODEL_PATH = "srcnn_epoch99.pth"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+SAMPLE_IMAGES = {
+    "CT Sample 1": "sample_images/IMG_0807.png",
+    "CT Sample 2": "sample_images/IMG_0808.png",
+    "CT Sample 3": "sample_images/IMG_0809.png",
+    "CT Sample 4": "sample_images/IMG_0810.png"
+}
+
 # ============================
 # SRCNN Model Definition
 # ============================
@@ -66,13 +73,25 @@ def postprocess(tensor: torch.Tensor) -> Image.Image:
 # ============================
 # STREAMLIT APP
 # ============================
-st.title("X-ray Super-Resolution using SRCNN")
-st.write("Upload a **grayscale X-ray image**, and the model will enhance the resolution.")
+st.title("CT Image Super-Resolution")
+st.write("Upload a **grayscale CT image**, or select a sample image to enhance its resolution.")
 
-uploaded_file = st.file_uploader("Choose an image", type=["png", "jpg", "jpeg"])
+# --- Sample Images Section ---
+with st.expander("Or choose a sample image"):
+    selected_sample = st.radio("Select sample image", list(SAMPLE_IMAGES.keys()))
 
+# --- File Upload ---
+uploaded_file = st.file_uploader("Or upload your own image", type=["png", "jpg", "jpeg"])
+
+# --- Load image (sample or upload) ---
+image = None
 if uploaded_file:
     image = Image.open(uploaded_file).convert("L")
+elif selected_sample:
+    image = Image.open(SAMPLE_IMAGES[selected_sample]).convert("L")
+
+# --- Perform inference ---
+if image:
     st.image(image.resize((512, 512), resample=Image.BICUBIC), caption="Low-Resolution Input", use_column_width=True)
 
     input_tensor = preprocess(image)
