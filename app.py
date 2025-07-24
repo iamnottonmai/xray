@@ -73,8 +73,8 @@ def postprocess(tensor: torch.Tensor) -> Image.Image:
 # ============================
 # STREAMLIT APP
 # ============================
-st.title("CT Image Super-Resolution")
-st.write("Upload a **grayscale CT image**, or select a sample image to enhance its resolution.")
+st.title("CT Chest Super-Resolution")
+st.write("Upload a **Chest CT image**, or select a sample image to enhance its resolution.")
 
 # --- Sample Images Section ---
 with st.expander("Or choose a sample image"):
